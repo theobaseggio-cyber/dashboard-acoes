@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Trader Pro — Théo Baseggio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:        #080b0f;
+      --panel:     #0d1117;
+      --border:    #1c2430;
+      --green:     #00e676;
+      --red:       #ff3d57;
+      --yellow:    #ffd600;
+      --blue:      #00b0ff;
+      --muted:     #4a5568;
+      --text:      #c9d1d9;
+      --mono:      'Share Tech Mono', monospace;
+      --ui:        'Rajdhani', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ui);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ─────────────────────────────────────── */
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--blue);
+      letter-spacing: 1px;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #clock {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .btn-settings {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--ui);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .btn-settings:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .alert-badge {
+      background: var(--red);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      display: none;
+    }
+    .alert-badge.visible { display: inline-block; }
+
+    /* ── GRID ────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 6px;
+      padding: 6px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: border-color 0.3s;
+      position: relative;
+    }
+    .card.alert-min { border-color: var(--green); box-shadow: 0 0 12px rgba(0,230,118,0.15); }
+    .card.alert-max { border-color: var(--red);   box-shadow: 0 0 12px rgba(255,61,87,0.15); }
+
+    .chart-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* ── PRICE PANEL ─────────────────────────────────── */
+    .price-panel {
+      background: #0a0e14;
+      border-top: 1px solid var(--border);
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .price-left {
+      display: flex;
+      flex-direction: column;
+      min-width: 110px;
+    }
+
+    .asset-name {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .price-value {
+      font-family: var(--mono);
+      font-size: 18px;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .price-change {
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .price-change.up   { color: var(--green); }
+    .price-change.down { color: var(--red); }
+    .price-change.flat { color: var(--muted); }
+
+    .divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .alert-inputs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex: 1;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .input-label {
+      font-size: 9px;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .input-label.min { color: var(--green); }
+    .input-label.max { color: var(--red); }
+
+    .price-input {
+      background: #111820;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 3px 7px;
+      border-radius: 3px;
+      width: 90px;
+      transition: border-color 0.2s;
+    }
+    .price-input:focus { outline: none; border-color: var(--blue); }
+    .price-input.triggered-min { border-color: var(--green); color: var(--green); }
+    .price-input.triggered-max { border-color: var(--red);   color: var(--red); }
+
+    .alert-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 70px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: all 0.3s;
+    }
+    .status-dot.active   { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); animation: pulse 1.5s infinite; }
+    .status-dot.hit-min  { background: var(--green);  box-shadow: 0 0 8px var(--green); }
+    .status-dot.hit-max  { background: var(--red);    box-shadow: 0 0 8px var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── MODAL ───────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 480px;
+      max-width: 95vw;
+      padding: 28px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .modal-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .modal-sub a { color: var(--blue); }
+
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #111820;
+      border: 1px solid var(--border);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 9px 12px;
+      border-radius: 4px;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--blue); }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .btn-save {
+      flex: 1;
+      background: var(--blue);
+      color: #000;
+      border: none;
+      font-family: var(--ui);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: opacity 0.2s;
+    }
+    .btn-save:hover { opacity: 0.85; }
+
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--ui);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .btn-cancel:hover { border-color: var(--muted); }
+
+    .section-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      margin-top: 20px;
+    }
+
+    /* ── TOAST ───────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      max-width: 300px;
+      animation: slideIn 0.3s ease;
+    }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.warning { border-left: 3px solid var(--yellow); }
+    .toast.error   { border-left: 3px solid var(--red); }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <span class="header-logo">▣ TRADER</span>
+    <span class="header-title">TRADER PRO — THÉO BASEGGIO</span>
+  </div>
+  <div class="header-right">
+    <span id="clock">--:--:--</span>
+    <span class="alert-badge" id="alert-badge">● ALERTA</span>
+    <button class="btn-settings" onclick="openSettings()">⚙ CONFIGURAR ALERTAS</button>
+  </div>
+</header>
+
+<!-- GRID -->
+<div class="grid">
+
+  <div class="card" id="card-petr4">
+    <div class="chart-wrap" id="tv_petr4"></div>
+    <div class="price-panel">
+      <div class="price-left">
+        <span class="asset-name">PETR4</span>
+        <span class="price-value" id="price-petr4">—</span>
+        <span class="price-change flat" id="change-petr4">— —%</span>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-inputs">
+        <div class="input-group">
+          <span class="input-label min">▲ MÍN</span>
+          <input class="price-input" id="min-petr4" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <span class="input-label max">▼ MÁX</span>
+          <input class="price-input" id="max-petr4" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="alert-status">
+        <div class="status-dot" id="dot-petr4"></div>
+        <span class="status-text" id="status-petr4">SEM ALERTA</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-vale3">
+    <div class="chart-wrap" id="tv_vale3"></div>
+    <div class="price-panel">
+      <div class="price-left">
+        <span class="asset-name">VALE3</span>
+        <span class="price-value" id="price-vale3">—</span>
+        <span class="price-change flat" id="change-vale3">— —%</span>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-inputs">
+        <div class="input-group">
+          <span class="input-label min">▲ MÍN</span>
+          <input class="price-input" id="min-vale3" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <span class="input-label max">▼ MÁX</span>
+          <input class="price-input" id="max-vale3" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="alert-status">
+        <div class="status-dot" id="dot-vale3"></div>
+        <span class="status-text" id="status-vale3">SEM ALERTA</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-itub4">
+    <div class="chart-wrap" id="tv_itub4"></div>
+    <div class="price-panel">
+      <div class="price-left">
+        <span class="asset-name">ITUB4</span>
+        <span class="price-value" id="price-itub4">—</span>
+        <span class="price-change flat" id="change-itub4">— —%</span>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-inputs">
+        <div class="input-group">
+          <span class="input-label min">▲ MÍN</span>
+          <input class="price-input" id="min-itub4" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <span class="input-label max">▼ MÁX</span>
+          <input class="price-input" id="max-itub4" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="alert-status">
+        <div class="status-dot" id="dot-itub4"></div>
+        <span class="status-text" id="status-itub4">SEM ALERTA</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-sapr11">
+    <div class="chart-wrap" id="tv_sapr11"></div>
+    <div class="price-panel">
+      <div class="price-left">
+        <span class="asset-name">SAPR11</span>
+        <span class="price-value" id="price-sapr11">—</span>
+        <span class="price-change flat" id="change-sapr11">— —%</span>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-inputs">
+        <div class="input-group">
+          <span class="input-label min">▲ MÍN</span>
+          <input class="price-input" id="min-sapr11" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <span class="input-label max">▼ MÁX</span>
+          <input class="price-input" id="max-sapr11" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="alert-status">
+        <div class="status-dot" id="dot-sapr11"></div>
+        <span class="status-text" id="status-sapr11">SEM ALERTA</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-gold">
+    <div class="chart-wrap" id="tv_gold"></div>
+    <div class="price-panel">
+      <div class="price-left">
+        <span class="asset-name">OURO</span>
+        <span class="price-value" id="price-gold">—</span>
+        <span class="price-change flat" id="change-gold">— —%</span>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-inputs">
+        <div class="input-group">
+          <span class="input-label min">▲ MÍN</span>
+          <input class="price-input" id="min-gold" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <span class="input-label max">▼ MÁX</span>
+          <input class="price-input" id="max-gold" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="alert-status">
+        <div class="status-dot" id="dot-gold"></div>
+        <span class="status-text" id="status-gold">SEM ALERTA</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-oil">
+    <div class="chart-wrap" id="tv_oil"></div>
+    <div class="price-panel">
+      <div class="price-left">
+        <span class="asset-name">BRENT</span>
+        <span class="price-value" id="price-oil">—</span>
+        <span class="price-change flat" id="change-oil">— —%</span>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-inputs">
+        <div class="input-group">
+          <span class="input-label min">▲ MÍN</span>
+          <input class="price-input" id="min-oil" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <span class="input-label max">▼ MÁX</span>
+          <input class="price-input" id="max-oil" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="alert-status">
+        <div class="status-dot" id="dot-oil"></div>
+        <span class="status-text" id="status-oil">SEM ALERTA</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL CONFIGURAÇÕES -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">⚙ CONFIGURAR ALERTAS</div>
+    <div class="modal-sub">
+      Configure onde receber as notificações quando um ativo atingir o preço mínimo ou máximo.
+    </div>
+
+    <div class="section-tag">✈️ TELEGRAM — configurado e ativo</div>
+    <div class="form-group">
+      <div class="form-hint" style="color:#00e676; padding: 8px 0;">
+        ✅ Alertas serão enviados automaticamente para o seu Telegram quando o preço for atingido.
+      </div>
+    </div>
+
+    <div class="section-tag">E-MAIL</div>
+
+    <div class="form-group">
+      <label class="form-label">SEU E-MAIL</label>
+      <input class="form-input" id="email-addr" type="email" placeholder="theo@email.com">
+      <div class="form-hint">Abrirá seu cliente de e-mail com o alerta pré-preenchido.</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-save" onclick="saveSettings()">SALVAR E ATIVAR</button>
+      <button class="btn-cancel" onclick="closeSettings()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toast-container"></div>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════
+//  ASSETS CONFIG
+// ═══════════════════════════════════════════════════
+const ASSETS = [
+  { id: 'petr4',  symbol: 'PETR4',  name: 'PETR4',  type: 'stock',  currency: 'R$',  tvSymbol: 'BMFBOVESPA:PETR4'  },
+  { id: 'vale3',  symbol: 'VALE3',  name: 'VALE3',  type: 'stock',  currency: 'R$',  tvSymbol: 'BMFBOVESPA:VALE3'  },
+  { id: 'itub4',  symbol: 'ITUB4',  name: 'ITUB4',  type: 'stock',  currency: 'R$',  tvSymbol: 'BMFBOVESPA:ITUB4'  },
+  { id: 'sapr11', symbol: 'SAPR11', name: 'SAPR11', type: 'stock',  currency: 'R$',  tvSymbol: 'BMFBOVESPA:SAPR11' },
+  { id: 'gold',   symbol: 'GC=F',   name: 'OURO',   type: 'stock',  currency: 'US$', tvSymbol: 'OANDA:XAUUSD'      },
+  { id: 'oil',    symbol: 'BZ=F',   name: 'BRENT',  type: 'stock',  currency: 'US$', tvSymbol: 'OANDA:BCOUSD'      },
+];
+
+// Estado dos alertas: armazena se já foi disparado (cooldown de 30min)
+const alertCooldown  = {};
+const currentPrices  = {};
+const previousPrices = {};
+
+// ═══════════════════════════════════════════════════
+//  TRADINGVIEW WIDGETS
+// ═══════════════════════════════════════════════════
+function createWidget(containerId, symbol) {
+  new TradingView.widget({
+    autosize: true,
+    symbol: symbol,
+    interval: "5",
+    timezone: "America/Sao_Paulo",
+    theme: "dark",
+    style: "3",
+    locale: "br",
+    hide_top_toolbar: false,
+    hide_legend: false,
+    container_id: containerId
+  });
+}
+
+ASSETS.forEach(a => createWidget(`tv_${a.id}`, a.tvSymbol));
+
+// ── EmailJS init ─────────────────────────────────────
+emailjs.init('5PeL0XiF7y9agfS_v');
+
+// ═══════════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('pt-BR', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════════════════════
+//  PRICE FETCHING — brapi.dev
+// ═══════════════════════════════════════════════════
+async function fetchPrices() {
+  const stocks = ASSETS.map(a => a.symbol).join(',');
+  try {
+    const res  = await fetch(`https://brapi.dev/api/quote/${stocks}`);
+    const data = await res.json();
+    if (!data.results) return;
+
+    data.results.forEach(q => {
+      const asset = ASSETS.find(a => a.symbol === q.symbol);
+      if (!asset) return;
+
+      const prev = currentPrices[asset.id];
+      if (prev !== undefined) previousPrices[asset.id] = prev;
+      currentPrices[asset.id] = q.regularMarketPrice;
+
+      updatePriceUI(asset, q);
+      checkAlerts(asset, q.regularMarketPrice);
+    });
+  } catch (e) {
+    console.warn('Erro ao buscar preços:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  UPDATE UI
+// ═══════════════════════════════════════════════════
+function updatePriceUI(asset, q) {
+  const price  = q.regularMarketPrice;
+  const change = q.regularMarketChangePercent;
+  const cur    = asset.currency;
+
+  // Preço
+  const el = document.getElementById(`price-${asset.id}`);
+  if (el) el.textContent = `${cur} ${price.toFixed(2)}`;
+
+  // Variação
+  const chEl = document.getElementById(`change-${asset.id}`);
+  if (chEl) {
+    const sign = change >= 0 ? '+' : '';
+    chEl.textContent = `${sign}${change.toFixed(2)}%`;
+    chEl.className = `price-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'flat'}`;
+  }
+
+  // Atualiza status do dot se alerta estiver definido
+  updateAlertStatus(asset.id);
+}
+
+// ═══════════════════════════════════════════════════
+//  ALERT STATUS UI
+// ═══════════════════════════════════════════════════
+function updateAlertStatus(id) {
+  const minVal = parseFloat(document.getElementById(`min-${id}`)?.value);
+  const maxVal = parseFloat(document.getElementById(`max-${id}`)?.value);
+  const price  = currentPrices[id];
+  const dot    = document.getElementById(`dot-${id}`);
+  const txt    = document.getElementById(`status-${id}`);
+  const card   = document.getElementById(`card-${id}`);
+  const minInput = document.getElementById(`min-${id}`);
+  const maxInput = document.getElementById(`max-${id}`);
+
+  if (!dot || !txt) return;
+
+  const hasMin = !isNaN(minVal) && minVal > 0;
+  const hasMax = !isNaN(maxVal) && maxVal > 0;
+
+  card.classList.remove('alert-min', 'alert-max');
+  minInput.classList.remove('triggered-min');
+  maxInput.classList.remove('triggered-max');
+
+  if (!hasMin && !hasMax) {
+    dot.className = 'status-dot';
+    txt.textContent = 'SEM ALERTA';
+    return;
+  }
+
+  if (price !== undefined) {
+    if (hasMin && price <= minVal) {
+      dot.className = 'status-dot hit-min';
+      txt.textContent = '▲ MÍN ATINGIDO';
+      card.classList.add('alert-min');
+      minInput.classList.add('triggered-min');
+      return;
+    }
+    if (hasMax && price >= maxVal) {
+      dot.className = 'status-dot hit-max';
+      txt.textContent = '▼ MÁX ATINGIDO';
+      card.classList.add('alert-max');
+      maxInput.classList.add('triggered-max');
+      return;
+    }
+  }
+
+  dot.className = 'status-dot active';
+  txt.textContent = 'MONITORANDO';
+}
+
+// ═══════════════════════════════════════════════════
+//  ALERT CHECK + NOTIFICATIONS
+// ═══════════════════════════════════════════════════
+function checkAlerts(asset, price) {
+  const minVal = parseFloat(document.getElementById(`min-${asset.id}`)?.value);
+  const maxVal = parseFloat(document.getElementById(`max-${asset.id}`)?.value);
+
+  const now = Date.now();
+  const cooldown = 30 * 60 * 1000; // 30 minutos
+
+  if (!isNaN(minVal) && minVal > 0 && price <= minVal) {
+    const key = `${asset.id}_min`;
+    if (!alertCooldown[key] || now - alertCooldown[key] > cooldown) {
+      alertCooldown[key] = now;
+      const msg = `🟢 ALERTA TRADER PRO\n${asset.name} atingiu o preço MÍNIMO\nPreço atual: ${asset.currency} ${price.toFixed(2)}\nMínimo definido: ${asset.currency} ${minVal.toFixed(2)}`;
+      sendNotifications(asset, msg, 'min');
+    }
+  }
+
+  if (!isNaN(maxVal) && maxVal > 0 && price >= maxVal) {
+    const key = `${asset.id}_max`;
+    if (!alertCooldown[key] || now - alertCooldown[key] > cooldown) {
+      alertCooldown[key] = now;
+      const msg = `🔴 ALERTA TRADER PRO\n${asset.name} atingiu o preço MÁXIMO\nPreço atual: ${asset.currency} ${price.toFixed(2)}\nMáximo definido: ${asset.currency} ${maxVal.toFixed(2)}`;
+      sendNotifications(asset, msg, 'max');
+    }
+  }
+}
+
+// ── Telegram config ──────────────────────────────────
+const TG_TOKEN   = '8743615283:AAGaoIYqNDAsVXMTWPI07MeyYr1amHl9EKA';
+const TG_CHAT_ID = '8756553108';
+
+function sendTelegram(msg) {
+  return fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
+  }).then(r => r.json());
+}
+
+function sendNotifications(asset, msg, type) {
+  const cfg = loadConfig();
+  showBadge(true);
+
+  // ✈️ Telegram
+  sendTelegram(msg)
+    .then(r => {
+      if (r.ok) toast(`✈️ Telegram enviado: ${asset.name}`, 'success');
+      else      toast(`Telegram erro: ${r.description}`, 'error');
+    })
+    .catch(() => toast(`Telegram: erro de conexão`, 'error'));
+
+  // 📧 E-mail via EmailJS
+  emailjs.send('service_fy39ahe', 'hdcnln4', {
+    subject: `${asset.name} — preço ${type === 'min' ? 'mínimo' : 'máximo'} atingido`,
+    message: msg,
+    name:    'Trader Pro',
+  }).then(() => toast(`📧 E-mail enviado para theobaseggio@gmail.com`, 'success'))
+    .catch(e => toast(`E-mail erro: ${e.text || e}`, 'error'));
+
+  // Notificação do navegador
+  if (Notification.permission === 'granted') {
+    new Notification(`Trader Pro — ${asset.name}`, { body: msg });
+  }
+
+  toast(`🚨 ${asset.name}: preço ${type === 'min' ? 'mínimo' : 'máximo'} atingido!`, type === 'min' ? 'success' : 'warning');
+}
+
+// ═══════════════════════════════════════════════════
+//  SETTINGS MODAL
+// ═══════════════════════════════════════════════════
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem('traderCfg') || '{}'); }
+  catch { return {}; }
+}
+
+function saveConfig(cfg) {
+  localStorage.setItem('traderCfg', JSON.stringify(cfg));
+}
+
+function openSettings() {
+  const cfg = loadConfig();
+  document.getElementById('wpp-phone').value  = cfg.wppPhone  || '';
+  document.getElementById('wpp-apikey').value = cfg.wppApikey || '';
+  document.getElementById('email-addr').value = cfg.email     || '';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveSettings() {
+  const cfg = {
+    wppPhone:  document.getElementById('wpp-phone').value.trim(),
+    wppApikey: document.getElementById('wpp-apikey').value.trim(),
+    email:     document.getElementById('email-addr').value.trim(),
+  };
+  saveConfig(cfg);
+  closeSettings();
+
+  // Pede permissão de notificação do navegador
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  const channels = [];
+  if (cfg.wppPhone && cfg.wppApikey) channels.push('WhatsApp');
+  if (cfg.email) channels.push('E-mail');
+  toast(`✅ Alertas ativados via ${channels.join(' + ') || 'nenhum canal'}.`, 'success');
+}
+
+// Fecha modal clicando fora
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
+
+// ═══════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+// ═══════════════════════════════════════════════════
+//  ALERT BADGE
+// ═══════════════════════════════════════════════════
+function showBadge(v) {
+  document.getElementById('alert-badge').classList.toggle('visible', v);
+}
+
+// ═══════════════════════════════════════════════════
+//  INPUTS — atualiza status ao digitar
+// ═══════════════════════════════════════════════════
+ASSETS.forEach(a => {
+  ['min', 'max'].forEach(type => {
+    const input = document.getElementById(`${type}-${a.id}`);
+    if (input) input.addEventListener('input', () => updateAlertStatus(a.id));
+  });
+});
+
+// ═══════════════════════════════════════════════════
+//  INICIALIZAÇÃO
+// ═══════════════════════════════════════════════════
+// Pede permissão de notificação do navegador
+if (Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// Busca preços imediatamente e depois a cada 30 segundos
+fetchPrices();
+setInterval(fetchPrices, 30000);
+
+</script>
+</body>
+</html>
